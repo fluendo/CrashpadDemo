@@ -21,16 +21,20 @@ int function1() {
     return function2();
 }
 
-int main() {
-    std::cout << "Entering main()\n";
+crashpad::CrashpadClient * initCrashpad() {
     fs::path db = fs::absolute(fs::path("crashpad_db"));
     fs::create_directory(db);
     fs::path crashpadHandlerPath = fs::path (CRASHPAD_HANDLER_DIR) / CRASHPAD_HANDLER_NAME;
 
-    auto client = init("crashpaddemo", "0.1", crashpadHandlerPath.native(), db.native());
+    return init("crashpaddemo", "0.1", crashpadHandlerPath.native(), db.native());
+}
+
+int main() {
+    std::cout << "Entering main()\n";
+    auto client = initCrashpad();
     if (client == nullptr) {
         std::cout << "Crashpad failed to unitialize.";
-        return 1;
+        return -1;
     }
     function1();
     return 0;

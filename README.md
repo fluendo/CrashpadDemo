@@ -31,6 +31,19 @@ A CLI frontend for minidump-processor, providing both machine-readable and human
 
 # Integrate Crashpad in your application
 
+## Crashpad initialization and configuration
+
+Crashpad
+
+```cpp
+    fs::path db = fs::absolute(fs::path("crashpad_db"));
+    fs::create_directory(db);
+    fs::path crashpadHandlerPath = fs::path (CRASHPAD_HANDLER_DIR) / CRASHPAD_HANDLER_NAME;
+
+    auto client = init("crashpaddemo", "0.1", crashpadHandlerPath.native(), db.native());
+
+```
+
 ## Overview of the CMake Script
 
 Let's break down the provided CMake script step by step to understand its purpose and how it facilitates the integration of Crashpad into a C/C++ application.
@@ -43,19 +56,7 @@ cmake_minimum_required(VERSION 3.22.3-3.23)
 
 This line specifies the minimum required version of CMake for this script to run. In this case, the script requires at least CMake version 3.22.3.
 
-### Project Definition
-
-```cmake
-project(
-    crashpaddemo
-    VERSION 0.1
-    DESCRIPTION "Sample project that showcases how to integrate Crashpad in your C/C++ application"
-    LANGUAGES CXX)
-```
-
-Here, we define the project named "crashpaddemo" with version 0.1. Additionally, we provide a brief description of the project and specify that it will be using the C++ programming language.
-
-### Find Crashpad with conan
+### Adding the Crashpad dependency with conan
 
 ```cmake
 if(NOT EXISTS "${CMAKE_BINARY_DIR}/conan.cmake")
@@ -96,9 +97,9 @@ add_compile_definitions(CRASHPAD_HANDLER_NAME=\"${CRASHPAD_HANDLER}\")
 add_compile_definitions(CRASHPAD_HANDLER_DIR=\"${CMAKE_BINARY_DIR}\")
 ```
 
-This section creates the executable crashpaddemo, links it with the Crashpad client library, and sets the C++ standard to C++17. Additionally, it defines compiler variables for the crashpad_handler executable name and its directory based on the operating system.
+This section creates the executable crashpaddemo and links it with the Crashpad client library. Additionally, it defines compiler variables for the crashpad_handler executable name and its directory to be used by the application.
 
-### Post-Build Actions
+### Generate debug symbols with a post-build action
 
 ```cmake
 # Generate symbols using generate_symbols.py
@@ -111,13 +112,31 @@ add_custom_command(
     COMMENT "Generating symbols for CrashPad")
 ```
 
-This section sets up a post-build command to run a Python script (generate_symbols.py) to generate symbols for CrashPad. This is essential for analyzing crash reports effectively.
+This section sets up a post-build command that runs the `generate_symbols.py` script to generate symbols of the recently built application. for CrashPad. This is essential for analyzing crash reports effectively.
+
+After the build, the symbols for our application will be generated in the `syms` folder, under a subfolder with a UUID that identifies the binary that was built:
+
+`syms/crashpaddemo/E9F5B8DB43A93CEF90719355360C864E0/crashpaddemo.sym`
 
 # Symbols generation
 
 dump_syms is a command-line utility for parsing the debugging information the compiler provides (whether as DWARF or STABS sections in an ELF file or as stand-alone PDB files) and writing that information back out in the Breakpad symbol file format.
 
 <https://github.com/mozilla/dump_syms>
+
+# Run the application
+
+The `crashpaddemo` application is designed to segfault. If CrashPad is initialized and configured correctly, it will catch the segfault and generate a minidump.
+
+```bash
+✗ ./crashpaddemo
+Entering main()
+Initializing crashpad handler
+Entering function1()
+Entering function2()
+Entering function3()... BOOM!
+[1]    13958 segmentation fault  ./crashpaddemo
+```
 
 # Analyzing minidumps
 

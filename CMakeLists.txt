@@ -53,5 +53,5 @@ add_custom_command(
     TARGET crashpaddemo
     POST_BUILD
     COMMAND ${Python3_EXECUTABLE} ${CMAKE_SOURCE_DIR}/generate_symbols.py ${CMAKE_BINARY_DIR}/crashpaddemo${CMAKE_EXECUTABLE_SUFFIX}
-            ${CMAKE_BINARY_DIR}/syms --verbose -d ${DUMP_SYMS}
+            ${CMAKE_BINARY_DIR}/syms --verbose
     COMMENT "Generating symbols for CrashPad")
